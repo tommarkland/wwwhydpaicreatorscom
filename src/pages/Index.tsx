@@ -102,10 +102,9 @@ const Index = () => {
     setIsSubmitting(true);
 
     const score = calculateQualityScore({
-      followingSize: formData.followingSize ? parseInt(formData.followingSize) : null,
-      cost: formData.cost ? parseFloat(formData.cost) : null,
       averageViews: formData.averageViews ? parseInt(formData.averageViews) : null,
-      contentQuality: formData.contentQuality,
+      region: formData.region,
+      memberType: formData.category,
     });
 
     const { error } = await supabase.from('evaluations').insert({
