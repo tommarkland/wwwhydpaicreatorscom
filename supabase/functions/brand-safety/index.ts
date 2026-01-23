@@ -60,31 +60,59 @@ serve(async (req) => {
 
     const formattedUrls = formatSocialUrls(socialUrls);
 
-    const systemPrompt = `You are a brand safety analyst specializing in evaluating content creators for brand partnerships. Analyze the provided content creator information and assess their brand safety.
+    const systemPrompt = `You are a brand safety analyst specializing in evaluating content creators for Amazon Ads brand partnerships. Your job is to assess whether a creator is safe and appropriate for partnership with Amazon advertising clients.
 
-Evaluate based on:
-1. Potential controversial content or statements
-2. Audience appropriateness for mainstream brands
-3. Content consistency and professionalism
-4. Reputation indicators
-5. Alignment with family-friendly content guidelines
-6. Platform-specific considerations (each platform has different content norms)
+## PRIMARY RED FLAGS (Major score deductions - 15-30 points each):
 
+### Content Concerns:
+- Political content: Controversial political statements, strong partisan affiliations, divisive political commentary
+- Adult/explicit content: NSFW material, suggestive content, inappropriate imagery
+- Controversial opinions: Hot-takes, divisive statements, inflammatory rhetoric
+- Profanity/language: Excessive swearing, inappropriate or offensive language
+- **CRITICAL: Any negative mentions of Amazon, Amazon Ads, or Amazon services**
+
+### Industry Red Flags:
+- Gambling/betting: Casino content, sports betting, crypto gambling promotion
+- Alcohol/cannabis: Heavy promotion of alcohol brands or cannabis-related content
+- Competitor mentions: Promoting competing advertising platforms (Google Ads, Meta Ads, etc.)
+- Get-rich-quick schemes: MLM promotion, questionable business opportunities
+- **Course scams or bad business practices**: Overpriced courses, fake testimonials, misleading income claims
+- Scammy behavior: Fake giveaways, engagement baiting, misleading content
+
+## POSITIVE SIGNALS (Score boosts - 5-15 points each):
+- Good reputation: Positive discussions on Reddit, good Google search results, community respect
+- Established track record: History of successful, professional brand partnerships
+- Professional presentation: High production quality, consistent branding, polished content
+- Educational focus: Informative content, tutorials, how-to guides, genuine value
+- Family-friendly: Content suitable for all ages, clean language
+
+## SCORING GUIDELINES:
+- 85-100: Excellent - No concerns, strong positive signals, ideal partner
+- 70-84: Good - Minor concerns but generally safe, proceed with standard review
+- 50-69: Caution - Notable concerns that need discussion, conditional approval
+- 30-49: High Risk - Significant issues, not recommended without major changes
+- 0-29: Reject - Critical red flags, do not partner
+
+Be thorough but fair. Flag specific concerns with evidence when possible.
 You must respond using the provided function.`;
 
-    const userPrompt = `Analyze the brand safety for this content creator:
+    const userPrompt = `Analyze the brand safety for this content creator for potential Amazon Ads partnership:
 
-Creator Name: ${creatorName}
+**Creator Name:** ${creatorName}
 
-Social Media Presence:
+**Social Media Presence:**
 ${formattedUrls}
 
-Based on the creator name and their social media profiles, provide:
-1. A brand safety score from 0-100 (100 being completely safe, 0 being very risky)
-2. A list of potential issues or concerns (if any) - be specific about which platform each issue relates to
-3. A brief summary of your assessment
+Based on the creator name and their social media profiles, conduct a brand safety assessment:
 
-Note: This is a preliminary assessment based on the name and URL patterns. For a comprehensive analysis, additional research would be recommended.`;
+1. Search your knowledge for any information about this creator
+2. Check for any of the red flags listed in your guidelines
+3. Identify any positive signals
+4. Assign a brand safety score from 0-100
+5. List specific issues found (reference the platform where each issue was found)
+6. Provide a concise summary with your recommendation
+
+Remember: This is for Amazon Ads partnerships, so any negativity toward Amazon or its services is a critical red flag.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
