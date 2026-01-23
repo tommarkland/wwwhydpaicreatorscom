@@ -9,6 +9,7 @@ import { CreatorForm, EvaluationFormData } from '@/components/evaluation/Creator
 import { EvaluationList, Evaluation } from '@/components/evaluation/EvaluationList';
 import { EvaluationDetail } from '@/components/evaluation/EvaluationDetail';
 import { calculateQualityScore } from '@/lib/scoreCalculator';
+import { calculateRecommendedCost } from '@/lib/costCalculator';
 import { generatePdfReport } from '@/lib/pdfGenerator';
 import { LogOut, Plus, LayoutDashboard, Loader2 } from 'lucide-react';
 
@@ -108,6 +109,15 @@ const Index = () => {
       memberType: formData.category,
     });
 
+    // Calculate recommended cost instead of using form input
+    const recommendedCost = calculateRecommendedCost({
+      averageViews: formData.averageViews ? parseInt(formData.averageViews) : null,
+      followingSize: formData.followingSize ? parseInt(formData.followingSize) : null,
+      contentQuality: formData.contentQuality,
+      region: formData.region,
+      memberType: formData.category,
+    });
+
     const { error } = await supabase.from('evaluations').insert({
       user_id: user.id,
       creator_name: formData.creatorName,
@@ -115,7 +125,7 @@ const Index = () => {
       region: formData.region,
       category: formData.category,
       following_size: formData.followingSize ? parseInt(formData.followingSize) : null,
-      cost: formData.cost ? parseFloat(formData.cost) : null,
+      cost: recommendedCost,
       average_views: formData.averageViews ? parseInt(formData.averageViews) : null,
       content_quality: formData.contentQuality,
       quality_score: score,
