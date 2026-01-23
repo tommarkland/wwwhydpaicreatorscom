@@ -51,13 +51,9 @@ const REGIONS = [
   'Middle East & Africa',
 ];
 
-const CATEGORIES = [
-  'Amazon Ads',
-  'Amazon FBA & Reseller',
-  'Adjacent Industry',
-  'Brand',
-  'SMB / Entrepreneur',
-  'Rising Star',
+const MEMBER_TYPES = [
+  'Influencer',
+  'Seller-trainer',
 ];
 
 const SOCIAL_PLATFORMS = [
@@ -210,17 +206,17 @@ export const CreatorForm = ({
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category *</FormLabel>
+                    <FormLabel>Member Type *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select member type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {MEMBER_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
                           </SelectItem>
                         ))}
                       </SelectContent>
