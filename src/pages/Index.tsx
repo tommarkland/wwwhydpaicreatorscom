@@ -103,6 +103,7 @@ const Index = () => {
 
     const score = calculateQualityScore({
       averageViews: formData.averageViews ? parseInt(formData.averageViews) : null,
+      followingSize: formData.followingSize ? parseInt(formData.followingSize) : null,
       region: formData.region,
       memberType: formData.category,
     });
