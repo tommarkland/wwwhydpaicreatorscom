@@ -59,19 +59,19 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       {/* Logo */}
-      <div className="mb-8">
+      <div className="mb-8 animate-fade-in">
         <Logo size="lg" />
       </div>
 
       {/* Title */}
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 text-center">
+      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 text-center animate-fade-in">
         CREATOR EVALUATOR AMAZONADS
       </h1>
-      <p className="text-muted-foreground mb-8 text-center">
+      <p className="text-muted-foreground mb-8 text-center animate-fade-in">
         AI-powered creator evaluation and brand safety analysis
       </p>
 
-      <Card className="w-full max-w-md glass-card border-border/50">
+      <Card className="w-full max-w-md glass-card border-border/30 animate-fade-in">
         <CardHeader className="text-center pb-2">
           <CardTitle className="text-xl font-semibold">Welcome</CardTitle>
           <CardDescription>
@@ -80,16 +80,16 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-1">
+            <TabsList className="grid w-full grid-cols-2 glass-card p-1.5 h-auto">
               <TabsTrigger 
                 value="signin"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 py-2.5"
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger 
                 value="signup"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 py-2.5"
               >
                 Sign Up
               </TabsTrigger>
@@ -98,7 +98,7 @@ const Auth = () => {
             <TabsContent value="signin" className="mt-6">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email" className="text-foreground">Email</Label>
+                  <Label htmlFor="signin-email" className="text-foreground text-sm font-medium">Email</Label>
                   <Input
                     id="signin-email"
                     type="email"
@@ -106,11 +106,11 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-secondary/50 border-border/50 focus:border-primary"
+                    className="bg-secondary/50 border-border/30 focus:border-primary/50 input-glow transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password" className="text-foreground">Password</Label>
+                  <Label htmlFor="signin-password" className="text-foreground text-sm font-medium">Password</Label>
                   <Input
                     id="signin-password"
                     type="password"
@@ -118,10 +118,14 @@ const Auth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-secondary/50 border-border/50 focus:border-primary"
+                    className="bg-secondary/50 border-border/30 focus:border-primary/50 input-glow transition-all duration-300"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full btn-glow bg-primary hover:bg-primary/90 font-semibold py-5 transition-all duration-300 hover:scale-[1.02]" 
+                  disabled={loading}
+                >
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
@@ -135,7 +139,7 @@ const Auth = () => {
             <TabsContent value="signup" className="mt-6">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-foreground">Email</Label>
+                  <Label htmlFor="signup-email" className="text-foreground text-sm font-medium">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -143,11 +147,11 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="bg-secondary/50 border-border/50 focus:border-primary"
+                    className="bg-secondary/50 border-border/30 focus:border-primary/50 input-glow transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-foreground">Password</Label>
+                  <Label htmlFor="signup-password" className="text-foreground text-sm font-medium">Password</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -156,10 +160,14 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="bg-secondary/50 border-border/50 focus:border-primary"
+                    className="bg-secondary/50 border-border/30 focus:border-primary/50 input-glow transition-all duration-300"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full btn-glow bg-primary hover:bg-primary/90 font-semibold py-5 transition-all duration-300 hover:scale-[1.02]" 
+                  disabled={loading}
+                >
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
@@ -179,12 +187,12 @@ const Auth = () => {
       </Card>
 
       {/* Footer link */}
-      <div className="mt-8 text-center">
+      <div className="mt-8 text-center animate-fade-in">
         <a 
           href="https://www.hydp.ai" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-sm text-muted-foreground hover:text-primary transition-colors"
+          className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105 inline-block"
         >
           www.hydp.ai
         </a>

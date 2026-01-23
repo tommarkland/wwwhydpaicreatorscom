@@ -169,13 +169,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           <Logo size="md" />
           <Button 
             variant="ghost" 
             onClick={signOut}
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all duration-300"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
@@ -186,8 +186,8 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-12">
         {/* Hero Title */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+        <div className="text-center mb-12 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
             CREATOR EVALUATOR AMAZONADS
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -197,24 +197,24 @@ const Index = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 bg-secondary/50 p-1">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 glass-card p-1.5 h-auto">
             <TabsTrigger 
               value="new" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 py-2.5"
             >
               <Plus className="mr-2 h-4 w-4" />
               New Evaluation
             </TabsTrigger>
             <TabsTrigger 
               value="dashboard"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 py-2.5"
             >
               <LayoutDashboard className="mr-2 h-4 w-4" />
               Dashboard
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="new" className="mt-0">
+          <TabsContent value="new" className="mt-0 animate-fade-in">
             <CreatorForm 
               onSubmit={handleSubmit} 
               onRunBrandSafety={handleRunBrandSafety} 
@@ -225,7 +225,7 @@ const Index = () => {
             />
           </TabsContent>
 
-          <TabsContent value="dashboard" className="mt-0">
+          <TabsContent value="dashboard" className="mt-0 animate-fade-in">
             <EvaluationList 
               evaluations={evaluations} 
               onView={setSelectedEvaluation} 
@@ -237,14 +237,14 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-6 mt-auto">
-        <div className="container mx-auto px-6 flex flex-col items-center gap-3">
+      <footer className="border-t border-border/30 py-8 mt-auto bg-background/40 backdrop-blur-sm">
+        <div className="container mx-auto px-6 flex flex-col items-center gap-4">
           <Logo size="sm" />
           <a 
             href="https://www.hydp.ai" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-105"
           >
             www.hydp.ai
           </a>
