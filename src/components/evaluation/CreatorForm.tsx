@@ -1,20 +1,24 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Shield, Save, FileText } from 'lucide-react';
+import { Loader2, Shield, Save, Youtube, Instagram, Globe, Linkedin, Facebook } from 'lucide-react';
 
 const evaluationSchema = z.object({
   creatorName: z.string().min(1, 'Creator name is required'),
-  creatorUrls: z.string().optional(),
+  youtubeUrl: z.string().optional(),
+  instagramUrl: z.string().optional(),
+  tiktokUrl: z.string().optional(),
+  twitterUrl: z.string().optional(),
+  linkedinUrl: z.string().optional(),
+  facebookUrl: z.string().optional(),
+  websiteUrl: z.string().optional(),
   region: z.string().min(1, 'Region is required'),
   category: z.string().min(1, 'Category is required'),
   followingSize: z.string().optional(),
@@ -28,7 +32,7 @@ export type EvaluationFormData = z.infer<typeof evaluationSchema>;
 
 interface CreatorFormProps {
   onSubmit: (data: EvaluationFormData) => Promise<void>;
-  onRunBrandSafety: (creatorName: string, urls: string) => Promise<void>;
+  onRunBrandSafety: (creatorName: string, socialUrls: Record<string, string>) => Promise<void>;
   isSubmitting: boolean;
   isAnalyzing: boolean;
   brandSafetyResult?: {
@@ -56,6 +60,16 @@ const CATEGORIES = [
   'Rising Star',
 ];
 
+const SOCIAL_PLATFORMS = [
+  { key: 'youtubeUrl', label: 'YouTube', icon: Youtube, placeholder: 'https://youtube.com/@creator' },
+  { key: 'instagramUrl', label: 'Instagram', icon: Instagram, placeholder: 'https://instagram.com/creator' },
+  { key: 'tiktokUrl', label: 'TikTok', icon: Globe, placeholder: 'https://tiktok.com/@creator' },
+  { key: 'twitterUrl', label: 'X (Twitter)', icon: Globe, placeholder: 'https://x.com/creator' },
+  { key: 'linkedinUrl', label: 'LinkedIn', icon: Linkedin, placeholder: 'https://linkedin.com/in/creator' },
+  { key: 'facebookUrl', label: 'Facebook', icon: Facebook, placeholder: 'https://facebook.com/creator' },
+  { key: 'websiteUrl', label: 'Website', icon: Globe, placeholder: 'https://creator.com' },
+];
+
 export const CreatorForm = ({
   onSubmit,
   onRunBrandSafety,
@@ -68,7 +82,13 @@ export const CreatorForm = ({
     resolver: zodResolver(evaluationSchema),
     defaultValues: {
       creatorName: '',
-      creatorUrls: '',
+      youtubeUrl: '',
+      instagramUrl: '',
+      tiktokUrl: '',
+      twitterUrl: '',
+      linkedinUrl: '',
+      facebookUrl: '',
+      websiteUrl: '',
       region: '',
       category: '',
       followingSize: '',
@@ -81,9 +101,15 @@ export const CreatorForm = ({
 
   const handleBrandSafety = () => {
     const creatorName = form.getValues('creatorName');
-    const creatorUrls = form.getValues('creatorUrls') || '';
+    const socialUrls: Record<string, string> = {};
+    SOCIAL_PLATFORMS.forEach(({ key }) => {
+      const value = form.getValues(key as keyof EvaluationFormData);
+      if (value && typeof value === 'string') {
+        socialUrls[key] = value;
+      }
+    });
     if (creatorName) {
-      onRunBrandSafety(creatorName, creatorUrls);
+      onRunBrandSafety(creatorName, socialUrls);
     }
   };
 
@@ -123,23 +149,35 @@ export const CreatorForm = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="creatorUrls"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Creator URLs</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter URLs (one per line)&#10;https://youtube.com/@creator&#10;https://instagram.com/creator"
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Social Media URLs */}
+            <div className="space-y-3">
+              <FormLabel className="text-base font-medium">Social Media & Website</FormLabel>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {SOCIAL_PLATFORMS.map(({ key, label, icon: Icon, placeholder }) => (
+                  <FormField
+                    key={key}
+                    control={form.control}
+                    name={key as keyof EvaluationFormData}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="relative">
+                            <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              placeholder={placeholder}
+                              className="pl-10"
+                              {...field}
+                              value={field.value as string || ''}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField

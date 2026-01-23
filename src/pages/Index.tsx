@@ -60,13 +60,13 @@ const Index = () => {
     setIsLoadingEvaluations(false);
   };
 
-  const handleRunBrandSafety = async (creatorName: string, urls: string) => {
+  const handleRunBrandSafety = async (creatorName: string, socialUrls: Record<string, string>) => {
     setIsAnalyzing(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/brand-safety`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ creatorName, creatorUrls: urls }),
+        body: JSON.stringify({ creatorName, socialUrls }),
       });
 
       if (!response.ok) {
@@ -84,6 +84,19 @@ const Index = () => {
     }
   };
 
+  // Helper to format social URLs for storage
+  const formatUrlsForStorage = (formData: EvaluationFormData): string => {
+    const urls: string[] = [];
+    if (formData.youtubeUrl) urls.push(`YouTube: ${formData.youtubeUrl}`);
+    if (formData.instagramUrl) urls.push(`Instagram: ${formData.instagramUrl}`);
+    if (formData.tiktokUrl) urls.push(`TikTok: ${formData.tiktokUrl}`);
+    if (formData.twitterUrl) urls.push(`X/Twitter: ${formData.twitterUrl}`);
+    if (formData.linkedinUrl) urls.push(`LinkedIn: ${formData.linkedinUrl}`);
+    if (formData.facebookUrl) urls.push(`Facebook: ${formData.facebookUrl}`);
+    if (formData.websiteUrl) urls.push(`Website: ${formData.websiteUrl}`);
+    return urls.join('\n');
+  };
+
   const handleSubmit = async (formData: EvaluationFormData) => {
     if (!user) return;
     setIsSubmitting(true);
@@ -98,7 +111,7 @@ const Index = () => {
     const { error } = await supabase.from('evaluations').insert({
       user_id: user.id,
       creator_name: formData.creatorName,
-      creator_urls: formData.creatorUrls || null,
+      creator_urls: formatUrlsForStorage(formData) || null,
       region: formData.region,
       category: formData.category,
       following_size: formData.followingSize ? parseInt(formData.followingSize) : null,
