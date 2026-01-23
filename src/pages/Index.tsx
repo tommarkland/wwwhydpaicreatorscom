@@ -7,10 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { CreatorForm, EvaluationFormData } from '@/components/evaluation/CreatorForm';
 import { EvaluationList, Evaluation } from '@/components/evaluation/EvaluationList';
-import { EvaluationDetail } from '@/components/evaluation/EvaluationDetail';
+import { ReportPage } from '@/components/evaluation/ReportPage';
 import { calculateQualityScore } from '@/lib/scoreCalculator';
 import { calculateRecommendedCost } from '@/lib/costCalculator';
-import { generatePdfReport } from '@/lib/pdfGenerator';
 import { Logo } from '@/components/Logo';
 import { LogOut, Plus, LayoutDashboard, Loader2 } from 'lucide-react';
 
@@ -156,14 +155,6 @@ const Index = () => {
     }
   };
 
-  const handleDownloadPdf = (evaluation: Evaluation) => {
-    generatePdfReport(evaluation, {
-      companyName: profile?.company_name,
-      logoUrl: profile?.logo_url,
-      primaryColor: profile?.brand_primary_color,
-      secondaryColor: profile?.brand_secondary_color,
-    });
-  };
 
   if (authLoading) {
     return (
@@ -239,19 +230,18 @@ const Index = () => {
               evaluations={evaluations} 
               onView={setSelectedEvaluation} 
               onDelete={handleDelete} 
-              onDownloadPdf={handleDownloadPdf} 
               isLoading={isLoadingEvaluations} 
             />
           </TabsContent>
         </Tabs>
       </main>
 
-      <EvaluationDetail 
-        evaluation={selectedEvaluation} 
-        open={!!selectedEvaluation} 
-        onClose={() => setSelectedEvaluation(null)} 
-        onDownloadPdf={handleDownloadPdf} 
-      />
+      {selectedEvaluation && (
+        <ReportPage 
+          evaluation={selectedEvaluation} 
+          onClose={() => setSelectedEvaluation(null)} 
+        />
+      )}
     </div>
   );
 };
