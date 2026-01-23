@@ -1,3 +1,5 @@
+import hydpLogo from '@/assets/hydp-logo.png';
+
 interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -5,14 +7,18 @@ interface LogoProps {
 
 export const Logo = ({ className = '', size = 'md' }: LogoProps) => {
   const sizeClasses = {
-    sm: 'text-xl',
-    md: 'text-2xl',
-    lg: 'text-4xl',
+    sm: 'h-6',
+    md: 'h-8',
+    lg: 'h-12',
   };
 
   return (
-    <div className={`font-bold tracking-tight ${sizeClasses[size]} ${className}`}>
-      <span className="text-foreground">HYDP</span>
-    </div>
+    <a href="https://www.hydp.ai" target="_blank" rel="noopener noreferrer" className={className}>
+      <img 
+        src={hydpLogo} 
+        alt="HYDP" 
+        className={`${sizeClasses[size]} w-auto`}
+      />
+    </a>
   );
 };
