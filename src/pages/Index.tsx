@@ -188,7 +188,7 @@ const Index = () => {
         {/* Hero Title */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            CREATOR CALCULATOR
+            CREATOR EVALUATOR AMAZONADS
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Evaluate creators, analyze brand safety, and calculate recommended costs

@@ -65,7 +65,7 @@ const Auth = () => {
 
       {/* Title */}
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 text-center">
-        CREATOR CALCULATOR
+        CREATOR EVALUATOR AMAZONADS
       </h1>
       <p className="text-muted-foreground mb-8 text-center">
         AI-powered creator evaluation and brand safety analysis
