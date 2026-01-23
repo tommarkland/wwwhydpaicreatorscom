@@ -43,19 +43,54 @@ const formatSocialUrls = (urls: SocialUrls): string => {
   return parts.length > 0 ? parts.join('\n') : 'No social media URLs provided';
 };
 
-const buildSearchQueries = (creatorName: string, urls: SocialUrls): string[] => {
-  const queries: string[] = [
-    `"${creatorName}" controversy OR scam OR complaint OR review`,
-    `"${creatorName}" Amazon FBA OR Amazon seller OR Amazon ads`,
-  ];
+// Extract handles from social URLs
+const extractHandles = (urls: SocialUrls): string[] => {
+  const handles: string[] = [];
   
-  // Add platform-specific searches if URLs provided
   if (urls.youtubeUrl) {
-    queries.push(`site:reddit.com "${creatorName}" youtube`);
+    const match = urls.youtubeUrl.match(/@([^\/\?]+)|\/c\/([^\/\?]+)|\/channel\/([^\/\?]+)|\/user\/([^\/\?]+)/);
+    if (match) handles.push(match[1] || match[2] || match[3] || match[4]);
   }
-  if (urls.instagramUrl || urls.twitterUrl) {
-    queries.push(`"${creatorName}" social media reputation`);
+  if (urls.instagramUrl) {
+    const match = urls.instagramUrl.match(/instagram\.com\/([^\/\?]+)/);
+    if (match && match[1] !== 'p' && match[1] !== 'reel') handles.push(match[1]);
   }
+  if (urls.tiktokUrl) {
+    const match = urls.tiktokUrl.match(/tiktok\.com\/@?([^\/\?]+)/);
+    if (match) handles.push(match[1].replace('@', ''));
+  }
+  if (urls.twitterUrl) {
+    const match = urls.twitterUrl.match(/(?:twitter|x)\.com\/([^\/\?]+)/);
+    if (match) handles.push(match[1]);
+  }
+  
+  return [...new Set(handles.filter(h => h && h.length > 1))];
+};
+
+// Build comprehensive search queries
+const buildSearchQueries = (creatorName: string, handles: string[]): string[] => {
+  const queries: string[] = [];
+  
+  // Core controversy searches
+  queries.push(`"${creatorName}" controversy`);
+  queries.push(`"${creatorName}" scam OR fraud OR "fake giveaway"`);
+  queries.push(`"${creatorName}" refund OR chargeback OR "customer service" complaint`);
+  queries.push(`"${creatorName}" unethical OR shady OR lawsuit`);
+  queries.push(`"${creatorName}" sponsor complaints OR "misleading ads"`);
+  
+  // Reddit-specific searches
+  queries.push(`"${creatorName}" reddit`);
+  queries.push(`site:reddit.com "${creatorName}" scam`);
+  queries.push(`site:reddit.com "${creatorName}" controversy OR drama`);
+  
+  // Handle-based searches
+  handles.forEach(handle => {
+    queries.push(`"${handle}" scam OR controversy`);
+    queries.push(`site:reddit.com "${handle}"`);
+  });
+  
+  // Amazon/FBA specific (relevant for Amazon Ads partnerships)
+  queries.push(`"${creatorName}" Amazon review OR FBA OR seller`);
   
   return queries;
 };
@@ -83,40 +118,33 @@ serve(async (req) => {
     }
 
     const formattedUrls = formatSocialUrls(socialUrls);
+    const handles = extractHandles(socialUrls);
+    const searchQueries = buildSearchQueries(creatorName, handles);
+    
     let searchResults = "";
     let citations: string[] = [];
+    let queriesRun: string[] = [];
 
     // If Perplexity is available, perform real-time web search across multiple queries
     if (PERPLEXITY_API_KEY) {
-      console.log("Performing Perplexity searches for:", creatorName);
-      
-      // Build multiple targeted search queries
-      const searchQueries = [
-        // Main reputation search
-        `"${creatorName}" reviews OR reputation OR scam OR controversy`,
-        // Reddit-specific search
-        `site:reddit.com "${creatorName}"`,
-        // Amazon/FBA community search
-        `"${creatorName}" Amazon FBA OR Amazon seller OR course review`,
-      ];
-
-      // Add social handle searches if available
-      if (socialUrls.youtubeUrl) {
-        const ytHandle = socialUrls.youtubeUrl.split('/').pop()?.replace('@', '');
-        if (ytHandle) searchQueries.push(`"${ytHandle}" youtube controversy OR review`);
-      }
-      if (socialUrls.instagramUrl) {
-        const igHandle = socialUrls.instagramUrl.split('/').pop();
-        if (igHandle) searchQueries.push(`"${igHandle}" instagram scam OR fake OR review`);
-      }
+      console.log("Performing comprehensive brand safety scan for:", creatorName);
+      console.log("Extracted handles:", handles);
+      console.log("Running", searchQueries.length, "search queries");
 
       const allResults: string[] = [];
       const allCitations: string[] = [];
       
       try {
-        // Run multiple searches in parallel for better coverage
-        const searchPromises = searchQueries.slice(0, 3).map(async (query) => {
-          console.log("Searching:", query);
+        // Run searches in batches to avoid rate limits but maximize coverage
+        // Run up to 6 queries for comprehensive coverage
+        const queriesToRun = searchQueries.slice(0, 6);
+        queriesRun = queriesToRun;
+        
+        const searchPromises = queriesToRun.map(async (query, index) => {
+          // Small stagger to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, index * 100));
+          
+          console.log(`[${index + 1}/${queriesToRun.length}] Searching:`, query);
           
           const perplexityResponse = await fetch("https://api.perplexity.ai/chat/completions", {
             method: "POST",
@@ -125,25 +153,29 @@ serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "sonar-pro", // Use sonar-pro for better search depth
+              model: "sonar-pro",
               messages: [
                 { 
                   role: "system", 
-                  content: "You are a research assistant. Search thoroughly for information about this person. Report all relevant findings including Reddit discussions, forum posts, reviews, and news articles. Be comprehensive - include both positive and negative findings. If you find nothing, explicitly say so." 
+                  content: `You are an investigative research assistant specializing in due diligence and reputation research. Your job is to thoroughly search for ANY negative information, controversies, complaints, or red flags about a person or brand.
+
+Be thorough and report:
+- Reddit discussions and threads (especially from r/Scams, r/antiMLM, r/BeermoneySub, etc.)
+- Review site complaints (BBB, Trustpilot, etc.)
+- News articles about controversies
+- Forum discussions and warnings
+- Social media drama or call-outs
+- Legal issues, lawsuits, or regulatory actions
+- Refund complaints or chargeback mentions
+- Sponsorship or advertising controversies
+
+If you find NOTHING negative, clearly state that no issues were found. Do not make assumptions.` 
                 },
                 { 
                   role: "user", 
-                  content: `Search the web thoroughly for: ${query}
-                  
-Look specifically for:
-- Reddit threads and discussions
-- Review sites and testimonials  
-- News articles and blog posts
-- Forum discussions
-- Social media drama or controversies
-- Business complaints or BBB records
+                  content: `Search thoroughly for: ${query}
 
-Report everything you find with sources.` 
+Report all findings with specific details. Include URLs/sources where possible.` 
                 }
               ],
               search_recency_filter: "year",
@@ -154,18 +186,20 @@ Report everything you find with sources.`
             const perplexityData = await perplexityResponse.json();
             const content = perplexityData.choices?.[0]?.message?.content || "";
             const sourceCitations = perplexityData.citations || [];
-            return { content, citations: sourceCitations };
+            console.log(`[${index + 1}] Found ${sourceCitations.length} citations`);
+            return { query, content, citations: sourceCitations };
           } else {
-            console.error("Search failed for query:", query, await perplexityResponse.text());
-            return { content: "", citations: [] };
+            const errorText = await perplexityResponse.text();
+            console.error(`[${index + 1}] Search failed:`, errorText);
+            return { query, content: "", citations: [] };
           }
         });
 
         const results = await Promise.all(searchPromises);
         
         results.forEach((result, index) => {
-          if (result.content) {
-            allResults.push(`### Search ${index + 1}: ${searchQueries[index]}\n${result.content}`);
+          if (result.content && result.content.trim()) {
+            allResults.push(`### Query ${index + 1}: "${result.query}"\n${result.content}`);
           }
           allCitations.push(...result.citations);
         });
@@ -173,7 +207,11 @@ Report everything you find with sources.`
         searchResults = allResults.join('\n\n---\n\n');
         citations = [...new Set(allCitations)]; // Deduplicate citations
         
-        console.log("Perplexity searches completed, found", citations.length, "unique citations");
+        console.log("Brand safety scan complete:", {
+          queriesRun: queriesToRun.length,
+          resultsFound: allResults.length,
+          uniqueCitations: citations.length,
+        });
       } catch (searchError) {
         console.error("Perplexity search error:", searchError);
       }
@@ -215,24 +253,31 @@ Report everything you find with sources.`
 You must respond using the provided function. For each issue, include the source URL.`;
 
     const userPrompt = `Analyze brand safety for: ${creatorName}
+${handles.length > 0 ? `\nExtracted Social Handles: ${handles.join(', ')}` : ''}
 
 Social Media Presence:
 ${formattedUrls}
 
 ${searchResults ? `
-## WEB SEARCH RESULTS:
+## COMPREHENSIVE WEB SEARCH RESULTS
+(${queriesRun.length} queries executed across web + Reddit)
+
 ${searchResults}
 
-## AVAILABLE CITATIONS:
+## AVAILABLE CITATIONS (${citations.length} sources found):
 ${citations.map((url, i) => `[${i + 1}] ${url}`).join('\n')}
+
+## QUERIES EXECUTED:
+${queriesRun.map((q, i) => `${i + 1}. ${q}`).join('\n')}
 ` : `
 ## NO WEB SEARCH AVAILABLE
 Perplexity search is not configured. You can only assess based on the creator name and URLs provided.
 Be conservative - if you have no information, give a neutral score (3-4) and note that no search was performed.
 `}
 
-Based on the search results above (or lack thereof), provide your brand safety assessment. 
-Remember: ONLY report issues that are explicitly found in the search results. Include source URLs for each issue.`;
+Based on the comprehensive search results above (or lack thereof), provide your brand safety assessment. 
+Remember: ONLY report issues that are explicitly found in the search results. Include source URLs for each issue.
+If searches returned no negative information, this is a POSITIVE signal - give a high score.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -329,6 +374,9 @@ Remember: ONLY report issues that are explicitly found in the search results. In
       summary: result.summary,
       searchPerformed: !!PERPLEXITY_API_KEY,
       citationCount: citations.length,
+      queriesExecuted: queriesRun.length,
+      handlesFound: handles,
+      citations: citations,
     };
 
     return new Response(JSON.stringify(formattedResult), {
