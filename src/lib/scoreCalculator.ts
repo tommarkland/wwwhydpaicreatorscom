@@ -1,81 +1,106 @@
-// Quality Score Calculator
-// This uses a weighted formula that you can customize
+// Quality Score Calculator based on Average Views
+// Thresholds vary by Region and Member Type
 
 interface MetricsInput {
-  followingSize: number | null;
-  cost: number | null;
   averageViews: number | null;
-  contentQuality: number;
+  region: string;
+  memberType: string;
 }
 
-// Weights for each metric (customize these based on your formula)
-const WEIGHTS = {
-  engagementRatio: 0.3,  // Views vs Following ratio
-  costEfficiency: 0.25,  // Cost per view
-  contentQuality: 0.25,  // Quality slider value
-  reach: 0.2,            // Raw following size
-};
-
-// Normalize a value to 0-100 scale based on typical ranges
-const normalizeFollowing = (value: number): number => {
-  // Assumes typical range of 0 to 10M followers
-  const maxFollowing = 10000000;
-  return Math.min((value / maxFollowing) * 100, 100);
-};
-
-const normalizeViews = (value: number): number => {
-  // Assumes typical range of 0 to 1M views
-  const maxViews = 1000000;
-  return Math.min((value / maxViews) * 100, 100);
-};
-
-const normalizeCostEfficiency = (cost: number, views: number): number => {
-  if (views === 0 || cost === 0) return 50; // Default middle score
-  
-  const costPerView = cost / views;
-  // Lower cost per view = better score
-  // Assumes $0.01 per view is excellent, $1 per view is poor
-  if (costPerView <= 0.01) return 100;
-  if (costPerView >= 1) return 0;
-  
-  return 100 - (Math.log10(costPerView * 100) * 50);
-};
-
-const normalizeEngagementRatio = (views: number, following: number): number => {
-  if (following === 0) return 0;
-  
-  const ratio = views / following;
-  // 10% engagement is considered average, 50%+ is excellent
-  if (ratio >= 0.5) return 100;
-  if (ratio <= 0.01) return 10;
-  
-  return Math.min(ratio * 200, 100);
+// Thresholds for each combination of Region + Member Type
+// Score corresponds to minimum average views needed to achieve that score
+const SCORE_THRESHOLDS: Record<string, Record<string, number[]>> = {
+  // EMEA region (formerly MENA in the original table)
+  'EMEA': {
+    'Influencer': [
+      1400,    // Score 1
+      2800,    // Score 2
+      5600,    // Score 3
+      8000,    // Score 4
+      10000,   // Score 5
+      12000,   // Score 6
+      14400,   // Score 7
+      17280,   // Score 8
+      25920,   // Score 9
+      51840,   // Score 10
+    ],
+    'Seller-trainer': [
+      1048.74,    // Score 1
+      2097.48,    // Score 2
+      4194.96,    // Score 3
+      5992.80,    // Score 4
+      7491.00,    // Score 5
+      8989.20,    // Score 6
+      10787.04,   // Score 7
+      12944.45,   // Score 8
+      19416.67,   // Score 9
+      38833.34,   // Score 10
+    ],
+  },
+  // Americas region
+  'Americas': {
+    'Influencer': [
+      4173.12,    // Score 1
+      8346.24,    // Score 2
+      16692.48,   // Score 3
+      23846.40,   // Score 4
+      29808.00,   // Score 5
+      35769.60,   // Score 6
+      42923.52,   // Score 7
+      51508.22,   // Score 8
+      77262.34,   // Score 9
+      154524.67,  // Score 10
+    ],
+    'Seller-trainer': [
+      1048.74,    // Score 1
+      2097.48,    // Score 2
+      4194.96,    // Score 3
+      5992.80,    // Score 4
+      7491.00,    // Score 5
+      8989.20,    // Score 6
+      10787.04,   // Score 7
+      12944.45,   // Score 8
+      19416.67,   // Score 9
+      38833.34,   // Score 10
+    ],
+  },
 };
 
 export const calculateQualityScore = (metrics: MetricsInput): number => {
-  const { followingSize, cost, averageViews, contentQuality } = metrics;
+  const { averageViews, region, memberType } = metrics;
 
-  // Convert nulls to 0 for calculation
-  const following = followingSize || 0;
-  const views = averageViews || 0;
-  const costValue = cost || 0;
+  // If no average views provided, return 0
+  if (!averageViews || averageViews <= 0) {
+    return 0;
+  }
 
-  // Calculate individual component scores (0-100)
-  const reachScore = normalizeFollowing(following);
-  const engagementScore = normalizeEngagementRatio(views, following);
-  const costScore = normalizeCostEfficiency(costValue, views);
-  const qualityScore = contentQuality * 10; // Already 1-10, scale to 0-100
+  // Get the thresholds for this region and member type
+  const regionThresholds = SCORE_THRESHOLDS[region];
+  if (!regionThresholds) {
+    console.warn(`Unknown region: ${region}, using EMEA defaults`);
+    return calculateWithThresholds(averageViews, SCORE_THRESHOLDS['EMEA']['Influencer']);
+  }
 
-  // Calculate weighted average
-  const finalScore =
-    reachScore * WEIGHTS.reach +
-    engagementScore * WEIGHTS.engagementRatio +
-    costScore * WEIGHTS.costEfficiency +
-    qualityScore * WEIGHTS.contentQuality;
+  const thresholds = regionThresholds[memberType];
+  if (!thresholds) {
+    console.warn(`Unknown member type: ${memberType}, using Influencer defaults`);
+    return calculateWithThresholds(averageViews, regionThresholds['Influencer']);
+  }
 
-  // Return score capped at 100
-  return Math.min(Math.max(finalScore, 0), 100);
+  return calculateWithThresholds(averageViews, thresholds);
 };
 
-// Export weights for reference
-export const getScoreWeights = () => WEIGHTS;
+const calculateWithThresholds = (views: number, thresholds: number[]): number => {
+  // Find the highest score where views meet or exceed the threshold
+  for (let score = 10; score >= 1; score--) {
+    if (views >= thresholds[score - 1]) {
+      return score;
+    }
+  }
+  
+  // If views are below the minimum threshold, return 0
+  return 0;
+};
+
+// Export thresholds for reference
+export const getScoreThresholds = () => SCORE_THRESHOLDS;
