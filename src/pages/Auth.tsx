@@ -177,6 +177,18 @@ const Auth = () => {
           </p>
         </CardFooter>
       </Card>
+
+      {/* Footer link */}
+      <div className="mt-8 text-center">
+        <a 
+          href="https://www.hydp.ai" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          www.hydp.ai
+        </a>
+      </div>
     </div>
   );
 };
