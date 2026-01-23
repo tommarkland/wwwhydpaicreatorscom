@@ -86,45 +86,94 @@ serve(async (req) => {
     let searchResults = "";
     let citations: string[] = [];
 
-    // If Perplexity is available, perform real-time web search
+    // If Perplexity is available, perform real-time web search across multiple queries
     if (PERPLEXITY_API_KEY) {
-      console.log("Performing Perplexity search for:", creatorName);
+      console.log("Performing Perplexity searches for:", creatorName);
+      
+      // Build multiple targeted search queries
+      const searchQueries = [
+        // Main reputation search
+        `"${creatorName}" reviews OR reputation OR scam OR controversy`,
+        // Reddit-specific search
+        `site:reddit.com "${creatorName}"`,
+        // Amazon/FBA community search
+        `"${creatorName}" Amazon FBA OR Amazon seller OR course review`,
+      ];
+
+      // Add social handle searches if available
+      if (socialUrls.youtubeUrl) {
+        const ytHandle = socialUrls.youtubeUrl.split('/').pop()?.replace('@', '');
+        if (ytHandle) searchQueries.push(`"${ytHandle}" youtube controversy OR review`);
+      }
+      if (socialUrls.instagramUrl) {
+        const igHandle = socialUrls.instagramUrl.split('/').pop();
+        if (igHandle) searchQueries.push(`"${igHandle}" instagram scam OR fake OR review`);
+      }
+
+      const allResults: string[] = [];
+      const allCitations: string[] = [];
       
       try {
-        const searchQuery = `Find information about content creator "${creatorName}". Look for: 
-1. Any controversies, scams, or negative reviews
-2. Their reputation in the Amazon FBA/seller community
-3. Any complaints about courses or business practices
-4. Their general online reputation on Reddit, forums, and review sites
-5. Any political, controversial, or inappropriate content they've posted`;
+        // Run multiple searches in parallel for better coverage
+        const searchPromises = searchQueries.slice(0, 3).map(async (query) => {
+          console.log("Searching:", query);
+          
+          const perplexityResponse = await fetch("https://api.perplexity.ai/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "sonar-pro", // Use sonar-pro for better search depth
+              messages: [
+                { 
+                  role: "system", 
+                  content: "You are a research assistant. Search thoroughly for information about this person. Report all relevant findings including Reddit discussions, forum posts, reviews, and news articles. Be comprehensive - include both positive and negative findings. If you find nothing, explicitly say so." 
+                },
+                { 
+                  role: "user", 
+                  content: `Search the web thoroughly for: ${query}
+                  
+Look specifically for:
+- Reddit threads and discussions
+- Review sites and testimonials  
+- News articles and blog posts
+- Forum discussions
+- Social media drama or controversies
+- Business complaints or BBB records
 
-        const perplexityResponse = await fetch("https://api.perplexity.ai/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "sonar",
-            messages: [
-              { 
-                role: "system", 
-                content: "You are a research assistant. Find factual information about the person. Only report what you actually find - never make up or assume information. If you find nothing, say so." 
-              },
-              { role: "user", content: searchQuery }
-            ],
-            search_recency_filter: "year",
-          }),
+Report everything you find with sources.` 
+                }
+              ],
+              search_recency_filter: "year",
+            }),
+          });
+
+          if (perplexityResponse.ok) {
+            const perplexityData = await perplexityResponse.json();
+            const content = perplexityData.choices?.[0]?.message?.content || "";
+            const sourceCitations = perplexityData.citations || [];
+            return { content, citations: sourceCitations };
+          } else {
+            console.error("Search failed for query:", query, await perplexityResponse.text());
+            return { content: "", citations: [] };
+          }
         });
 
-        if (perplexityResponse.ok) {
-          const perplexityData = await perplexityResponse.json();
-          searchResults = perplexityData.choices?.[0]?.message?.content || "";
-          citations = perplexityData.citations || [];
-          console.log("Perplexity search completed, found", citations.length, "citations");
-        } else {
-          console.error("Perplexity search failed:", await perplexityResponse.text());
-        }
+        const results = await Promise.all(searchPromises);
+        
+        results.forEach((result, index) => {
+          if (result.content) {
+            allResults.push(`### Search ${index + 1}: ${searchQueries[index]}\n${result.content}`);
+          }
+          allCitations.push(...result.citations);
+        });
+
+        searchResults = allResults.join('\n\n---\n\n');
+        citations = [...new Set(allCitations)]; // Deduplicate citations
+        
+        console.log("Perplexity searches completed, found", citations.length, "unique citations");
       } catch (searchError) {
         console.error("Perplexity search error:", searchError);
       }
