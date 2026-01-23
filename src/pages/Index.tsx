@@ -11,6 +11,7 @@ import { EvaluationDetail } from '@/components/evaluation/EvaluationDetail';
 import { calculateQualityScore } from '@/lib/scoreCalculator';
 import { calculateRecommendedCost } from '@/lib/costCalculator';
 import { generatePdfReport } from '@/lib/pdfGenerator';
+import { Logo } from '@/components/Logo';
 import { LogOut, Plus, LayoutDashboard, Loader2 } from 'lucide-react';
 
 const Index = () => {
@@ -25,7 +26,7 @@ const Index = () => {
   const [brandSafetyResult, setBrandSafetyResult] = useState<{ score: number; issues: string[]; summary: string } | null>(null);
   const [qualityScore, setQualityScore] = useState<number | undefined>();
   const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('new');
   const [profile, setProfile] = useState<{ company_name?: string; logo_url?: string; brand_primary_color?: string; brand_secondary_color?: string } | null>(null);
 
   useEffect(() => {
@@ -85,7 +86,6 @@ const Index = () => {
     }
   };
 
-  // Helper to format social URLs for storage
   const formatUrlsForStorage = (formData: EvaluationFormData): string => {
     const urls: string[] = [];
     if (formData.youtubeUrl) urls.push(`YouTube: ${formData.youtubeUrl}`);
@@ -109,7 +109,6 @@ const Index = () => {
       memberType: formData.category,
     });
 
-    // Calculate recommended cost instead of using form input
     const recommendedCost = calculateRecommendedCost({
       averageViews: formData.averageViews ? parseInt(formData.averageViews) : null,
       followingSize: formData.followingSize ? parseInt(formData.followingSize) : null,
@@ -167,38 +166,92 @@ const Index = () => {
   };
 
   if (authLoading) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold text-primary">Creator Evaluation Tool</h1>
-          <Button variant="ghost" onClick={signOut}><LogOut className="mr-2 h-4 w-4" />Sign Out</Button>
+      {/* Header */}
+      <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto flex items-center justify-between px-6 py-4">
+          <Logo size="md" />
+          <Button 
+            variant="ghost" 
+            onClick={signOut}
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="dashboard"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</TabsTrigger>
-            <TabsTrigger value="new"><Plus className="mr-2 h-4 w-4" />New Evaluation</TabsTrigger>
+      {/* Main Content */}
+      <main className="container mx-auto px-6 py-12">
+        {/* Hero Title */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            CREATOR CALCULATOR
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Evaluate creators, analyze brand safety, and calculate recommended costs
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 bg-secondary/50 p-1">
+            <TabsTrigger 
+              value="new" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Evaluation
+            </TabsTrigger>
+            <TabsTrigger 
+              value="dashboard"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard">
-            <EvaluationList evaluations={evaluations} onView={setSelectedEvaluation} onDelete={handleDelete} onDownloadPdf={handleDownloadPdf} isLoading={isLoadingEvaluations} />
+          <TabsContent value="new" className="mt-0">
+            <CreatorForm 
+              onSubmit={handleSubmit} 
+              onRunBrandSafety={handleRunBrandSafety} 
+              isSubmitting={isSubmitting} 
+              isAnalyzing={isAnalyzing} 
+              brandSafetyResult={brandSafetyResult} 
+              qualityScore={qualityScore} 
+            />
           </TabsContent>
 
-          <TabsContent value="new">
-            <CreatorForm onSubmit={handleSubmit} onRunBrandSafety={handleRunBrandSafety} isSubmitting={isSubmitting} isAnalyzing={isAnalyzing} brandSafetyResult={brandSafetyResult} qualityScore={qualityScore} />
+          <TabsContent value="dashboard" className="mt-0">
+            <EvaluationList 
+              evaluations={evaluations} 
+              onView={setSelectedEvaluation} 
+              onDelete={handleDelete} 
+              onDownloadPdf={handleDownloadPdf} 
+              isLoading={isLoadingEvaluations} 
+            />
           </TabsContent>
         </Tabs>
       </main>
 
-      <EvaluationDetail evaluation={selectedEvaluation} open={!!selectedEvaluation} onClose={() => setSelectedEvaluation(null)} onDownloadPdf={handleDownloadPdf} />
+      <EvaluationDetail 
+        evaluation={selectedEvaluation} 
+        open={!!selectedEvaluation} 
+        onClose={() => setSelectedEvaluation(null)} 
+        onDownloadPdf={handleDownloadPdf} 
+      />
     </div>
   );
 };
