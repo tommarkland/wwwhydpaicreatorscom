@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,9 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Shield, Save, Youtube, Instagram, Globe, Linkedin, Facebook } from 'lucide-react';
-
+import { Loader2, Shield, Save, Youtube, Instagram, Globe, Linkedin, Facebook, DollarSign, Info } from 'lucide-react';
+import { calculateRecommendedCost, getCpvBreakdown } from '@/lib/costCalculator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 const evaluationSchema = z.object({
   creatorName: z.string().min(1, 'Creator name is required'),
   youtubeUrl: z.string().optional(),
@@ -41,6 +42,7 @@ interface CreatorFormProps {
     summary: string;
   } | null;
   qualityScore?: number;
+  onRecommendedCostChange?: (cost: number | null) => void;
 }
 
 const REGIONS = [
@@ -90,6 +92,30 @@ export const CreatorForm = ({
       contentQuality: 5,
       notes: '',
     },
+  });
+
+  // Watch fields needed for cost calculation
+  const averageViews = useWatch({ control: form.control, name: 'averageViews' });
+  const followingSize = useWatch({ control: form.control, name: 'followingSize' });
+  const contentQuality = useWatch({ control: form.control, name: 'contentQuality' });
+  const region = useWatch({ control: form.control, name: 'region' });
+  const category = useWatch({ control: form.control, name: 'category' });
+
+  // Calculate recommended cost
+  const recommendedCost = calculateRecommendedCost({
+    averageViews: averageViews ? parseInt(averageViews) : null,
+    followingSize: followingSize ? parseInt(followingSize) : null,
+    contentQuality: contentQuality || 5,
+    region: region || 'EMEA',
+    memberType: category || 'Influencer',
+  });
+
+  const cpvBreakdown = getCpvBreakdown({
+    averageViews: averageViews ? parseInt(averageViews) : null,
+    followingSize: followingSize ? parseInt(followingSize) : null,
+    contentQuality: contentQuality || 5,
+    region: region || 'EMEA',
+    memberType: category || 'Influencer',
   });
 
   const handleBrandSafety = () => {
@@ -233,7 +259,7 @@ export const CreatorForm = ({
             <CardDescription>Enter the creator's performance data</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="followingSize"
@@ -242,20 +268,6 @@ export const CreatorForm = ({
                     <FormLabel>Following Size</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="e.g., 100000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="cost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cost ($)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" placeholder="e.g., 5000.00" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -297,6 +309,53 @@ export const CreatorForm = ({
                 </FormItem>
               )}
             />
+
+            {/* Recommended Cost Display */}
+            {recommendedCost !== null && (
+              <div className="mt-4 p-4 rounded-lg bg-accent/50 border border-accent">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    <span className="font-medium">Recommended Cost</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-sm">
+                            Based on Average Views × Target CPV. Adjusted ±$0.01/view (max $0.10) for creator size and content quality.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <span className="text-2xl font-bold text-primary">
+                    ${recommendedCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                {cpvBreakdown && (
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <div className="flex justify-between">
+                      <span>Base CPV:</span>
+                      <span>${cpvBreakdown.baseCpv.toFixed(2)}</span>
+                    </div>
+                    {cpvBreakdown.adjustment !== 0 && (
+                      <div className="flex justify-between">
+                        <span>Adjustment:</span>
+                        <span className={cpvBreakdown.adjustment > 0 ? 'text-amber-600' : 'text-green-600'}>
+                          {cpvBreakdown.adjustment > 0 ? '+' : ''}${cpvBreakdown.adjustment.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-medium border-t pt-1 mt-1">
+                      <span>Final CPV:</span>
+                      <span>${cpvBreakdown.finalCpv.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {qualityScore !== undefined && (
               <div className="mt-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
