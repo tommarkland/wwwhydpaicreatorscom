@@ -5,9 +5,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface SocialUrls {
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
+  facebookUrl?: string;
+  websiteUrl?: string;
+}
+
 interface BrandSafetyRequest {
   creatorName: string;
-  creatorUrls: string;
+  socialUrls: SocialUrls;
 }
 
 interface BrandSafetyResponse {
@@ -16,13 +26,25 @@ interface BrandSafetyResponse {
   summary: string;
 }
 
+const formatSocialUrls = (urls: SocialUrls): string => {
+  const parts: string[] = [];
+  if (urls.youtubeUrl) parts.push(`- YouTube: ${urls.youtubeUrl}`);
+  if (urls.instagramUrl) parts.push(`- Instagram: ${urls.instagramUrl}`);
+  if (urls.tiktokUrl) parts.push(`- TikTok: ${urls.tiktokUrl}`);
+  if (urls.twitterUrl) parts.push(`- X (Twitter): ${urls.twitterUrl}`);
+  if (urls.linkedinUrl) parts.push(`- LinkedIn: ${urls.linkedinUrl}`);
+  if (urls.facebookUrl) parts.push(`- Facebook: ${urls.facebookUrl}`);
+  if (urls.websiteUrl) parts.push(`- Website: ${urls.websiteUrl}`);
+  return parts.length > 0 ? parts.join('\n') : 'No social media URLs provided';
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { creatorName, creatorUrls } = await req.json() as BrandSafetyRequest;
+    const { creatorName, socialUrls = {} } = await req.json() as BrandSafetyRequest;
 
     if (!creatorName) {
       return new Response(
@@ -36,7 +58,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a brand safety analyst. Analyze the provided content creator information and assess their brand safety for potential brand partnerships.
+    const formattedUrls = formatSocialUrls(socialUrls);
+
+    const systemPrompt = `You are a brand safety analyst specializing in evaluating content creators for brand partnerships. Analyze the provided content creator information and assess their brand safety.
 
 Evaluate based on:
 1. Potential controversial content or statements
@@ -44,17 +68,20 @@ Evaluate based on:
 3. Content consistency and professionalism
 4. Reputation indicators
 5. Alignment with family-friendly content guidelines
+6. Platform-specific considerations (each platform has different content norms)
 
 You must respond using the provided function.`;
 
     const userPrompt = `Analyze the brand safety for this content creator:
 
 Creator Name: ${creatorName}
-${creatorUrls ? `Creator URLs/Platforms: ${creatorUrls}` : 'No URLs provided'}
 
-Based on the creator name and any available information, provide:
+Social Media Presence:
+${formattedUrls}
+
+Based on the creator name and their social media profiles, provide:
 1. A brand safety score from 0-100 (100 being completely safe, 0 being very risky)
-2. A list of potential issues or concerns (if any)
+2. A list of potential issues or concerns (if any) - be specific about which platform each issue relates to
 3. A brief summary of your assessment
 
 Note: This is a preliminary assessment based on the name and URL patterns. For a comprehensive analysis, additional research would be recommended.`;
