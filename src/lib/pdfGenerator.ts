@@ -24,9 +24,9 @@ export const generatePdfReport = async (
 
   const getSafetyStatus = (score: number | null) => {
     if (score === null) return { label: 'Not Analyzed', color: '#6B7280' };
-    if (score >= 80) return { label: 'Low Risk', color: '#16A34A' };
-    if (score >= 50) return { label: 'Medium Risk', color: '#CA8A04' };
-    return { label: 'High Risk', color: '#DC2626' };
+    if (score >= 4) return { label: 'Safe', color: '#16A34A' };
+    if (score >= 3) return { label: 'Acceptable', color: '#CA8A04' };
+    return { label: 'Risky', color: '#DC2626' };
   };
 
   const safetyStatus = getSafetyStatus(evaluation.brand_safety_score);

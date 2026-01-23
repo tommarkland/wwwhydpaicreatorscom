@@ -62,38 +62,47 @@ serve(async (req) => {
 
     const systemPrompt = `You are a brand safety analyst specializing in evaluating content creators for Amazon Ads brand partnerships. Your job is to assess whether a creator is safe and appropriate for partnership with Amazon advertising clients.
 
-## PRIMARY RED FLAGS (Major score deductions - 15-30 points each):
+## CONTEXT:
+These creators are in the Amazon/e-commerce/business space. Being business-focused, entrepreneurial, or teaching about Amazon FBA/selling is POSITIVE - that's exactly what we want. We're checking for brand safety issues, not whether they're "too business-y".
+
+## RED FLAGS (Score deductions):
+
+### Critical Issues (instant low score):
+- **Any negative mentions of Amazon, Amazon Ads, or Amazon services** - This is disqualifying
+- Course scams or misleading income claims - Fake testimonials, unrealistic promises
+- Known scammer or bad actor in the Amazon seller community
 
 ### Content Concerns:
-- Political content: Controversial political statements, strong partisan affiliations, divisive political commentary
-- Adult/explicit content: NSFW material, suggestive content, inappropriate imagery
-- Controversial opinions: Hot-takes, divisive statements, inflammatory rhetoric
-- Profanity/language: Excessive swearing, inappropriate or offensive language
-- **CRITICAL: Any negative mentions of Amazon, Amazon Ads, or Amazon services**
+- Political content: Controversial political statements, strong partisan affiliations
+- Adult/explicit content: NSFW material, suggestive content
+- Controversial opinions: Divisive statements, inflammatory rhetoric
+- Excessive profanity: Heavy swearing, offensive language
 
 ### Industry Red Flags:
-- Gambling/betting: Casino content, sports betting, crypto gambling promotion
-- Alcohol/cannabis: Heavy promotion of alcohol brands or cannabis-related content
-- Competitor mentions: Promoting competing advertising platforms (Google Ads, Meta Ads, etc.)
-- Get-rich-quick schemes: MLM promotion, questionable business opportunities
-- **Course scams or bad business practices**: Overpriced courses, fake testimonials, misleading income claims
-- Scammy behavior: Fake giveaways, engagement baiting, misleading content
+- Gambling/betting promotion
+- Heavy alcohol/cannabis promotion
+- Promoting competing ad platforms (Google Ads, Meta Ads, etc.)
+- MLM or pyramid scheme involvement
+- Get-rich-quick schemes beyond legitimate Amazon business
 
-## POSITIVE SIGNALS (Score boosts - 5-15 points each):
-- Good reputation: Positive discussions on Reddit, good Google search results, community respect
-- Established track record: History of successful, professional brand partnerships
-- Professional presentation: High production quality, consistent branding, polished content
-- Educational focus: Informative content, tutorials, how-to guides, genuine value
-- Family-friendly: Content suitable for all ages, clean language
+## POSITIVE SIGNALS (Score boosts):
+- Legitimate Amazon business expertise (FBA, advertising, selling)
+- Good community reputation (known positively in Amazon seller circles)
+- Professional presentation and high-quality content
+- Educational, helpful content about e-commerce
+- Established track record of brand partnerships
+- Clean, professional language
 
-## SCORING GUIDELINES:
-- 85-100: Excellent - No concerns, strong positive signals, ideal partner
-- 70-84: Good - Minor concerns but generally safe, proceed with standard review
-- 50-69: Caution - Notable concerns that need discussion, conditional approval
-- 30-49: High Risk - Significant issues, not recommended without major changes
-- 0-29: Reject - Critical red flags, do not partner
+## SCORING (0-5 scale):
+- 5: Excellent - No concerns, ideal Amazon Ads partner
+- 4: Good - Minor concerns, safe to partner
+- 3: Acceptable - Some concerns but workable
+- 2: Caution - Notable issues, needs discussion
+- 1: High Risk - Significant problems, not recommended
+- 0: Reject - Critical red flags (anti-Amazon, scammer, etc.)
 
-Be thorough but fair. Flag specific concerns with evidence when possible.
+IMPORTANT: Base your assessment on your training knowledge about this creator. If you don't have specific information, assess based on the name and URL patterns, and note the limited information in your summary.
+
 You must respond using the provided function.`;
 
     const userPrompt = `Analyze the brand safety for this content creator for potential Amazon Ads partnership:
@@ -103,16 +112,15 @@ You must respond using the provided function.`;
 **Social Media Presence:**
 ${formattedUrls}
 
-Based on the creator name and their social media profiles, conduct a brand safety assessment:
+Assess this creator for Amazon Ads partnership suitability:
+1. Use your knowledge about this creator (if any)
+2. Check for red flags in the guidelines
+3. Identify positive signals
+4. Assign a score from 0-5
+5. List specific issues (if any)
+6. Summarize with your recommendation
 
-1. Search your knowledge for any information about this creator
-2. Check for any of the red flags listed in your guidelines
-3. Identify any positive signals
-4. Assign a brand safety score from 0-100
-5. List specific issues found (reference the platform where each issue was found)
-6. Provide a concise summary with your recommendation
-
-Remember: This is for Amazon Ads partnerships, so any negativity toward Amazon or its services is a critical red flag.`;
+Remember: Business/entrepreneurial content is POSITIVE. We're looking for brand safety issues, not filtering out business people.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -137,16 +145,16 @@ Remember: This is for Amazon Ads partnerships, so any negativity toward Amazon o
                 properties: {
                   score: {
                     type: "number",
-                    description: "Brand safety score from 0-100 (100 = completely safe)",
+                    description: "Brand safety score from 0-5 (5 = excellent, ideal partner)",
                   },
                   issues: {
                     type: "array",
                     items: { type: "string" },
-                    description: "List of potential brand safety issues or concerns",
+                    description: "List of specific brand safety issues or concerns found",
                   },
                   summary: {
                     type: "string",
-                    description: "Brief summary of the brand safety assessment",
+                    description: "Brief summary with recommendation for Amazon Ads partnership",
                   },
                 },
                 required: ["score", "issues", "summary"],
@@ -187,8 +195,8 @@ Remember: This is for Amazon Ads partnerships, so any negativity toward Amazon o
 
     const result: BrandSafetyResponse = JSON.parse(toolCall.function.arguments);
 
-    // Ensure score is within bounds
-    result.score = Math.min(100, Math.max(0, Math.round(result.score)));
+    // Ensure score is within bounds (0-5)
+    result.score = Math.min(5, Math.max(0, Math.round(result.score)));
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

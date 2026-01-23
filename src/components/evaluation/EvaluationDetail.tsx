@@ -23,15 +23,15 @@ export const EvaluationDetail = ({
 
   const getSafetyColor = (score: number | null) => {
     if (score === null) return 'bg-muted';
-    if (score >= 80) return 'bg-green-50 border-green-200 text-green-700';
-    if (score >= 50) return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+    if (score >= 4) return 'bg-green-50 border-green-200 text-green-700';
+    if (score >= 3) return 'bg-yellow-50 border-yellow-200 text-yellow-700';
     return 'bg-red-50 border-red-200 text-red-700';
   };
 
   const getSafetyIcon = (score: number | null) => {
     if (score === null) return null;
-    if (score >= 80) return <CheckCircle className="h-5 w-5 text-green-600" />;
-    if (score >= 50) return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+    if (score >= 4) return <CheckCircle className="h-5 w-5 text-green-600" />;
+    if (score >= 3) return <AlertCircle className="h-5 w-5 text-yellow-600" />;
     return <AlertTriangle className="h-5 w-5 text-red-600" />;
   };
 
