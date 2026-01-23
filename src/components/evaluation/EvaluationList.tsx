@@ -50,26 +50,26 @@ export const EvaluationList = ({
 
   const getSafetyBadge = (score: number | null) => {
     if (score === null) return null;
-    if (score >= 80) {
+    if (score >= 4) {
       return (
         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
           <CheckCircle className="h-3 w-3 mr-1" />
-          Low Risk
+          {score}/5
         </Badge>
       );
     }
-    if (score >= 50) {
+    if (score >= 3) {
       return (
         <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
           <AlertCircle className="h-3 w-3 mr-1" />
-          Medium Risk
+          {score}/5
         </Badge>
       );
     }
     return (
       <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
         <AlertTriangle className="h-3 w-3 mr-1" />
-        High Risk
+        {score}/5
       </Badge>
     );
   };

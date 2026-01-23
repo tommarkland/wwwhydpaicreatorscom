@@ -114,15 +114,15 @@ export const CreatorForm = ({
   };
 
   const getSafetyScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 50) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    if (score >= 4) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 3) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
     return 'text-red-600 bg-red-50 border-red-200';
   };
 
   const getSafetyLabel = (score: number) => {
-    if (score >= 80) return 'Low Risk';
-    if (score >= 50) return 'Medium Risk';
-    return 'High Risk';
+    if (score >= 4) return 'Safe';
+    if (score >= 3) return 'Acceptable';
+    return 'Risky';
   };
 
   return (
