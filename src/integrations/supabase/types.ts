@@ -113,6 +113,41 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_reports: {
+        Row: {
+          created_at: string
+          evaluation_id: string
+          expires_at: string | null
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_id: string
+          expires_at?: string | null
+          id?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_id?: string
+          expires_at?: string | null
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_reports_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

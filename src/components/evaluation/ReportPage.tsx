@@ -1,9 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
-import { FileText, Image, X, AlertTriangle, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
+import { FileText, Image, X, AlertTriangle, CheckCircle, AlertCircle, ExternalLink, Share2, Check, Loader2 } from 'lucide-react';
 import { Evaluation } from './EvaluationList';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 
 interface ReportPageProps {
@@ -13,7 +15,10 @@ interface ReportPageProps {
 
 export const ReportPage = ({ evaluation, onClose }: ReportPageProps) => {
   const reportRef = useRef<HTMLDivElement>(null);
-
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   const getSafetyColor = (score: number | null) => {
     if (score === null) return { bg: 'bg-secondary', text: 'text-muted-foreground', label: 'Not Analyzed' };
     if (score >= 4) return { bg: 'bg-green-500/10', text: 'text-green-400', label: 'Safe' };
@@ -60,6 +65,56 @@ export const ReportPage = ({ evaluation, onClose }: ReportPageProps) => {
       link.click();
     } catch (error) {
       console.error('Failed to generate PNG:', error);
+    }
+  };
+
+  const handleShare = async () => {
+    setIsSharing(true);
+    try {
+      // Check if a share already exists for this evaluation
+      const { data: existingShare } = await supabase
+        .from('shared_reports')
+        .select('token')
+        .eq('evaluation_id', evaluation.id)
+        .maybeSingle();
+
+      let token: string;
+
+      if (existingShare) {
+        token = existingShare.token;
+      } else {
+        // Create a new share
+        const { data: newShare, error } = await supabase
+          .from('shared_reports')
+          .insert({
+            evaluation_id: evaluation.id,
+            user_id: evaluation.user_id,
+          })
+          .select('token')
+          .single();
+
+        if (error) throw error;
+        token = newShare.token;
+      }
+
+      const link = `${window.location.origin}/report/${token}`;
+      setShareLink(link);
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      
+      toast({ title: 'Share link copied to clipboard!' });
+    } catch (error) {
+      console.error('Failed to create share link:', error);
+      toast({ 
+        title: 'Failed to create share link', 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -221,6 +276,21 @@ export const ReportPage = ({ evaluation, onClose }: ReportPageProps) => {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={handleShare} 
+              disabled={isSharing}
+              className="bg-secondary/50 border-border/50"
+            >
+              {isSharing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : copied ? (
+                <Check className="mr-2 h-4 w-4" />
+              ) : (
+                <Share2 className="mr-2 h-4 w-4" />
+              )}
+              {copied ? 'Copied!' : 'Share Link'}
+            </Button>
             <Button variant="outline" onClick={downloadAsPng} className="bg-secondary/50 border-border/50">
               <Image className="mr-2 h-4 w-4" />
               Download PNG

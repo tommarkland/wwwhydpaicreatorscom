@@ -9,6 +9,7 @@ import { Search, Eye, Trash2, AlertTriangle, CheckCircle, AlertCircle } from 'lu
 
 export interface Evaluation {
   id: string;
+  user_id: string;
   creator_name: string;
   creator_urls: string | null;
   region: string;
