@@ -44,11 +44,8 @@ interface CreatorFormProps {
 }
 
 const REGIONS = [
-  'North America',
-  'Europe',
-  'Asia Pacific',
-  'Latin America',
-  'Middle East & Africa',
+  'Americas',
+  'EMEA',
 ];
 
 const MEMBER_TYPES = [
