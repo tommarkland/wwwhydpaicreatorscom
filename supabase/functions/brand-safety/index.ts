@@ -279,90 +279,138 @@ Based on the comprehensive search results above (or lack thereof), provide your 
 Remember: ONLY report issues that are explicitly found in the search results. Include source URLs for each issue.
 If searches returned no negative information, this is a POSITIVE signal - give a high score.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "brand_safety_assessment",
-              description: "Return the brand safety assessment with sourced issues",
-              parameters: {
-                type: "object",
-                properties: {
-                  score: {
-                    type: "number",
-                    description: "Brand safety score from 0-5 (5 = excellent, safe to partner)",
-                  },
-                  issues: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        issue: {
-                          type: "string",
-                          description: "Description of the brand safety issue found",
-                        },
-                        source: {
-                          type: "string",
-                          description: "URL source where this issue was found. Use 'No source - limited information' if search wasn't available",
-                        },
+    // Try to get AI analysis with retry logic
+    let result: BrandSafetyResponse | null = null;
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            tools: [
+              {
+                type: "function",
+                function: {
+                  name: "brand_safety_assessment",
+                  description: "Return the brand safety assessment with sourced issues",
+                  parameters: {
+                    type: "object",
+                    properties: {
+                      score: {
+                        type: "number",
+                        description: "Brand safety score from 0-5 (5 = excellent, safe to partner)",
                       },
-                      required: ["issue", "source"],
+                      issues: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            issue: {
+                              type: "string",
+                              description: "Description of the brand safety issue found",
+                            },
+                            source: {
+                              type: "string",
+                              description: "URL source where this issue was found. Use 'No source - limited information' if search wasn't available",
+                            },
+                          },
+                          required: ["issue", "source"],
+                        },
+                        description: "List of specific brand safety issues found WITH source URLs",
+                      },
+                      summary: {
+                        type: "string",
+                        description: "Brief summary explaining the score and key findings. Be clear about what was actually found vs. what wasn't searched.",
+                      },
                     },
-                    description: "List of specific brand safety issues found WITH source URLs",
-                  },
-                  summary: {
-                    type: "string",
-                    description: "Brief summary explaining the score and key findings. Be clear about what was actually found vs. what wasn't searched.",
+                    required: ["score", "issues", "summary"],
+                    additionalProperties: false,
                   },
                 },
-                required: ["score", "issues", "summary"],
-                additionalProperties: false,
               },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "brand_safety_assessment" } },
-      }),
-    });
+            ],
+            tool_choice: { type: "function", function: { name: "brand_safety_assessment" } },
+          }),
+        });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        if (!response.ok) {
+          if (response.status === 429) {
+            return new Response(
+              JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+              { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          if (response.status === 402) {
+            return new Response(
+              JSON.stringify({ error: "Usage limit reached. Please add credits to continue." }),
+              { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          const errorText = await response.text();
+          console.error(`AI gateway error (attempt ${attempt}):`, response.status, errorText);
+          lastError = new Error(`AI gateway error: ${response.status}`);
+          continue;
+        }
+
+        const data = await response.json();
+        
+        // Check for tool call response
+        const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+        if (toolCall) {
+          result = JSON.parse(toolCall.function.arguments);
+          break;
+        }
+        
+        // Fallback: Try to extract from text content if no tool call
+        const textContent = data.choices?.[0]?.message?.content;
+        if (textContent) {
+          console.log(`Attempt ${attempt}: No tool call, trying to parse text response`);
+          
+          // Try to find JSON in the response
+          const jsonMatch = textContent.match(/\{[\s\S]*"score"[\s\S]*"issues"[\s\S]*"summary"[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
+              result = JSON.parse(jsonMatch[0]);
+              break;
+            } catch (parseError) {
+              console.error("Failed to parse JSON from text:", parseError);
+            }
+          }
+          
+          // Last resort: Create a basic response from the text
+          if (attempt === 2) {
+            console.log("Using fallback response from text content");
+            result = {
+              score: 3,
+              issues: [],
+              summary: textContent.substring(0, 500) + (textContent.length > 500 ? '...' : ''),
+            };
+            break;
+          }
+        }
+        
+        lastError = new Error("No tool call or parseable response from AI");
+        console.error(`Attempt ${attempt}: No valid response, retrying...`);
+        
+      } catch (error) {
+        console.error(`Attempt ${attempt} error:`, error);
+        lastError = error instanceof Error ? error : new Error(String(error));
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Usage limit reached. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
     }
-
-    const data = await response.json();
     
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      throw new Error("No tool call response from AI");
+    if (!result) {
+      throw lastError || new Error("Failed to get AI response after retries");
     }
-
-    const result: BrandSafetyResponse = JSON.parse(toolCall.function.arguments);
 
     // Ensure score is within bounds (0-5)
     result.score = Math.min(5, Math.max(0, Math.round(result.score)));
