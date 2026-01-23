@@ -1,0 +1,180 @@
+import { useState } from 'react';
+import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Eye, Trash2, FileText, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
+
+export interface Evaluation {
+  id: string;
+  creator_name: string;
+  creator_urls: string | null;
+  region: string;
+  category: string;
+  following_size: number | null;
+  cost: number | null;
+  average_views: number | null;
+  content_quality: number | null;
+  quality_score: number | null;
+  brand_safety_score: number | null;
+  brand_safety_issues: string[];
+  brand_safety_summary: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+interface EvaluationListProps {
+  evaluations: Evaluation[];
+  onView: (evaluation: Evaluation) => void;
+  onDelete: (id: string) => void;
+  onDownloadPdf: (evaluation: Evaluation) => void;
+  isLoading: boolean;
+}
+
+export const EvaluationList = ({
+  evaluations,
+  onView,
+  onDelete,
+  onDownloadPdf,
+  isLoading,
+}: EvaluationListProps) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredEvaluations = evaluations.filter((evaluation) =>
+    evaluation.creator_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    evaluation.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    evaluation.region.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getSafetyBadge = (score: number | null) => {
+    if (score === null) return null;
+    if (score >= 80) {
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Low Risk
+        </Badge>
+      );
+    }
+    if (score >= 50) {
+      return (
+        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Medium Risk
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+        <AlertTriangle className="h-3 w-3 mr-1" />
+        High Risk
+      </Badge>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-10">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Evaluation History</CardTitle>
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search evaluations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {filteredEvaluations.length === 0 ? (
+          <div className="text-center py-10 text-muted-foreground">
+            {searchTerm ? 'No evaluations match your search' : 'No evaluations yet. Create your first one!'}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Creator</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Region</TableHead>
+                <TableHead className="text-center">Quality Score</TableHead>
+                <TableHead className="text-center">Brand Safety</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEvaluations.map((evaluation) => (
+                <TableRow key={evaluation.id}>
+                  <TableCell className="font-medium">{evaluation.creator_name}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{evaluation.category}</Badge>
+                  </TableCell>
+                  <TableCell>{evaluation.region}</TableCell>
+                  <TableCell className="text-center">
+                    {evaluation.quality_score !== null ? (
+                      <span className="font-semibold text-primary">
+                        {evaluation.quality_score.toFixed(1)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {getSafetyBadge(evaluation.brand_safety_score)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {format(new Date(evaluation.created_at), 'MMM d, yyyy')}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onView(evaluation)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDownloadPdf(evaluation)}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => onDelete(evaluation.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
