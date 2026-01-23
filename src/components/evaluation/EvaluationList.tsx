@@ -75,10 +75,11 @@ export const EvaluationList = ({
 
   if (isLoading) {
     return (
-      <Card className="glass-card border-border/50">
-        <CardContent className="py-10">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <Card className="glass-card border-border/30">
+        <CardContent className="py-16">
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent"></div>
+            <span className="text-muted-foreground text-sm">Loading evaluations...</span>
           </div>
         </CardContent>
       </Card>
@@ -86,50 +87,55 @@ export const EvaluationList = ({
   }
 
   return (
-    <Card className="glass-card border-border/50">
+    <Card className="glass-card border-border/30">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Evaluation History</CardTitle>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <CardTitle className="text-lg font-semibold">Evaluation History</CardTitle>
+          <div className="relative w-64 group">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
             <Input
               placeholder="Search evaluations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-secondary/50 border-border/50"
+              className="pl-10 bg-secondary/50 border-border/30 focus:border-primary/50 input-glow transition-all duration-300"
             />
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {filteredEvaluations.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground">
+          <div className="text-center py-16 text-muted-foreground">
+            <div className="mb-4 text-4xl opacity-30">📋</div>
             {searchTerm ? 'No evaluations match your search' : 'No evaluations yet. Create your first one!'}
           </div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="border-border/50">
-                <TableHead>Creator</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Region</TableHead>
-                <TableHead className="text-center">Quality Score</TableHead>
-                <TableHead className="text-center">Brand Safety</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="border-border/30 hover:bg-transparent">
+                <TableHead className="text-muted-foreground font-medium">Creator</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Category</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Region</TableHead>
+                <TableHead className="text-center text-muted-foreground font-medium">Quality Score</TableHead>
+                <TableHead className="text-center text-muted-foreground font-medium">Brand Safety</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Date</TableHead>
+                <TableHead className="text-right text-muted-foreground font-medium">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="stagger-fade-in">
               {filteredEvaluations.map((evaluation) => (
-                <TableRow key={evaluation.id} className="border-border/50 hover:bg-secondary/50 cursor-pointer" onClick={() => onView(evaluation)}>
+                <TableRow 
+                  key={evaluation.id} 
+                  className="border-border/30 hover:bg-secondary/50 cursor-pointer transition-all duration-300 group" 
+                  onClick={() => onView(evaluation)}
+                >
                   <TableCell className="font-medium">{evaluation.creator_name}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="bg-secondary">{evaluation.category}</Badge>
+                    <Badge variant="secondary" className="bg-secondary/80 border border-border/30">{evaluation.category}</Badge>
                   </TableCell>
-                  <TableCell>{evaluation.region}</TableCell>
+                  <TableCell className="text-muted-foreground">{evaluation.region}</TableCell>
                   <TableCell className="text-center">
                     {evaluation.quality_score !== null ? (
-                      <span className="font-semibold text-primary">
+                      <span className="font-bold score-display text-lg">
                         {evaluation.quality_score.toFixed(1)}
                       </span>
                     ) : (
@@ -143,19 +149,19 @@ export const EvaluationList = ({
                     {format(new Date(evaluation.created_at), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity duration-300" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => onView(evaluation)}
-                        className="hover:bg-secondary"
+                        className="hover:bg-secondary/80 hover:text-primary transition-all duration-300"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-all duration-300"
                         onClick={() => onDelete(evaluation.id)}
                       >
                         <Trash2 className="h-4 w-4" />
