@@ -13,12 +13,12 @@ interface CostInput {
 // Target CPV (Cost Per View) by Region + Member Type
 const TARGET_CPV: Record<string, Record<string, number>> = {
   'EMEA': {
-    'Influencer': 0.30,
-    'Seller-trainer': 0.17,
+    'Influencer': 0.19,
+    'Seller-trainer': 0.19,
   },
   'Americas': {
-    'Influencer': 0.17,
-    'Seller-trainer': 0.20,
+    'Influencer': 0.21,
+    'Seller-trainer': 0.21,
   },
 };
 
@@ -91,7 +91,7 @@ export const calculateRecommendedCost = (input: CostInput): number | null => {
 
   // Content quality adjustment: -$0.05 to +$0.05 based on 1-10 scale
   // 5 = neutral, below = negative adjustment, above = positive
-  const qualityAdjustment = (contentQuality - 5) * 0.01;
+  const qualityAdjustment = (contentQuality - 7.5) * 0.01;
   adjustment += qualityAdjustment;
 
   // Cap adjustment at ±$0.10
@@ -139,7 +139,7 @@ export const getCpvBreakdown = (input: CostInput): {
   }
 
   // Quality adjustment
-  const qualityAdjustment = (contentQuality - 5) * 0.01;
+  const qualityAdjustment = (contentQuality - 7.5) * 0.01;
 
   // Total adjustment (capped)
   let adjustment = sizeAdjustment + qualityAdjustment;
