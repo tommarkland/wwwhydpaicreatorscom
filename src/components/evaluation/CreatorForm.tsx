@@ -360,7 +360,7 @@ export const CreatorForm = ({
                     <span className="text-4xl font-bold text-primary">
                       ${(recommendedCost * 2).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </span>
-                    <p className="text-xs text-muted-foreground mt-1">Expected Content Value (ROI)</p>
+                    <p className="text-xs text-muted-foreground mt-1">Minimum Expected Content Value (ROI)</p>
                   </div>
                 </div>
                 {cpvBreakdown && (
