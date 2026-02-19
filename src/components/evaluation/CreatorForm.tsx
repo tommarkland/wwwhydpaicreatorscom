@@ -349,11 +349,19 @@ export const CreatorForm = ({
                     </div>
                   </div>
                 </div>
-                <div className="text-center mb-4">
-                  <span className="text-5xl font-bold score-display">
-                    ${recommendedCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                  </span>
-                  <p className="text-sm text-muted-foreground mt-2">Recommended payment to creator</p>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="text-center">
+                    <span className="text-4xl font-bold score-display">
+                      ${recommendedCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </span>
+                    <p className="text-xs text-muted-foreground mt-1">Advised Creator Rate</p>
+                  </div>
+                  <div className="text-center border-l border-border/30 pl-4">
+                    <span className="text-4xl font-bold text-primary">
+                      ${(recommendedCost * 2).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </span>
+                    <p className="text-xs text-muted-foreground mt-1">Expected Content Value (ROI)</p>
+                  </div>
                 </div>
                 {cpvBreakdown && (
                   <div className="text-sm text-muted-foreground space-y-2 pt-4 border-t border-border/30">
