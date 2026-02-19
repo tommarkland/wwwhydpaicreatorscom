@@ -205,7 +205,7 @@ export const ReportPage = ({ evaluation, onClose }: ReportPageProps) => {
                 <div class="metric-value">${formatCurrency(evaluation.cost)}</div>
               </div>
               <div class="metric-card" style="border: 1px solid rgba(99,102,241,0.3); background: rgba(99,102,241,0.1);">
-                <div class="metric-label">Expected Content Value (ROI)</div>
+                <div class="metric-label">Minimum Expected Content Value (ROI)</div>
                 <div class="metric-value" style="color: #818cf8;">${evaluation.cost !== null ? formatCurrency(evaluation.cost * 2) : '-'}</div>
               </div>
               <div class="metric-card">
@@ -376,7 +376,7 @@ export const ReportPage = ({ evaluation, onClose }: ReportPageProps) => {
               <div className="text-2xl font-semibold">{formatCurrency(evaluation.cost)}</div>
             </div>
             <div className="bg-primary/10 border border-primary/20 rounded-xl p-6 text-center">
-              <div className="text-xs text-muted-foreground mb-2">Expected Content Value (ROI)</div>
+              <div className="text-xs text-muted-foreground mb-2">Minimum Expected Content Value (ROI)</div>
               <div className="text-2xl font-semibold text-primary">
                 {evaluation.cost !== null ? formatCurrency(evaluation.cost * 2) : '-'}
               </div>
