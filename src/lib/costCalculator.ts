@@ -100,15 +100,24 @@ export const calculateRecommendedCost = (input: CostInput): number | null => {
   // Calculate final CPV
   const finalCpv = baseCpv + adjustment;
 
-  // Tiered pricing: full CPV for first 20,000 views, half CPV for views beyond 20,000
-  const TIER_THRESHOLD = 20000;
+  // Tiered pricing:
+  // Tier 1: 0–20,000 views → full CPV
+  // Tier 2: 20,001–100,000 views → 3/4 CPV
+  // Tier 3: 100,001+ views → 1/2 CPV
+  const TIER1_LIMIT = 20000;
+  const TIER2_LIMIT = 100000;
   let recommendedCost: number;
-  if (averageViews <= TIER_THRESHOLD) {
+  if (averageViews <= TIER1_LIMIT) {
     recommendedCost = averageViews * finalCpv;
+  } else if (averageViews <= TIER2_LIMIT) {
+    const tier1Cost = TIER1_LIMIT * finalCpv;
+    const tier2Cost = (averageViews - TIER1_LIMIT) * (finalCpv * 0.75);
+    recommendedCost = tier1Cost + tier2Cost;
   } else {
-    const tierOneCost = TIER_THRESHOLD * finalCpv;
-    const tierTwoCost = (averageViews - TIER_THRESHOLD) * (finalCpv / 2);
-    recommendedCost = tierOneCost + tierTwoCost;
+    const tier1Cost = TIER1_LIMIT * finalCpv;
+    const tier2Cost = (TIER2_LIMIT - TIER1_LIMIT) * (finalCpv * 0.75);
+    const tier3Cost = (averageViews - TIER2_LIMIT) * (finalCpv * 0.5);
+    recommendedCost = tier1Cost + tier2Cost + tier3Cost;
   }
 
   return Math.round(recommendedCost * 100) / 100; // Round to 2 decimal places
