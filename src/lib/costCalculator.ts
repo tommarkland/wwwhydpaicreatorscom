@@ -102,8 +102,8 @@ export const calculateRecommendedCost = (input: CostInput): number | null => {
 
   // Tiered pricing:
   // Tier 1: 0–20,000 views → full CPV
-  // Tier 2: 20,001–100,000 views → 3/4 CPV
-  // Tier 3: 100,001+ views → 1/2 CPV
+  // Tier 2: 20,001–100,000 views → 85% CPV
+  // Tier 3: 100,001+ views → 65% CPV
   const TIER1_LIMIT = 20000;
   const TIER2_LIMIT = 100000;
   let recommendedCost: number;
