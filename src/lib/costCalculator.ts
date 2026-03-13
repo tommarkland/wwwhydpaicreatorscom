@@ -115,8 +115,8 @@ export const calculateRecommendedCost = (input: CostInput): number | null => {
     recommendedCost = tier1Cost + tier2Cost;
   } else {
     const tier1Cost = TIER1_LIMIT * finalCpv;
-    const tier2Cost = (TIER2_LIMIT - TIER1_LIMIT) * (finalCpv * 0.75);
-    const tier3Cost = (averageViews - TIER2_LIMIT) * (finalCpv * 0.5);
+    const tier2Cost = (TIER2_LIMIT - TIER1_LIMIT) * (finalCpv * 0.85);
+    const tier3Cost = (averageViews - TIER2_LIMIT) * (finalCpv * 0.65);
     recommendedCost = tier1Cost + tier2Cost + tier3Cost;
   }
 
